@@ -125,7 +125,7 @@ static bool Window__init__(void *self, va_list *args)
   glfwSetFramebufferSizeCallback(obj->display, framebuffer_size_callback);
   glfwSetKeyCallback(obj->display, key_callback);
 
-  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   return true;
 }

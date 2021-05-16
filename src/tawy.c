@@ -6,6 +6,7 @@
 * Brief   : Demonstration of different engine components.
 *******************************************************************************/
 #include <stdio.h>
+#include <cglm/cglm.h>
 
 #include "model.h"
 #include "program.h"
@@ -15,7 +16,7 @@
 int main(void)
 {
   window *win = new(Window, 800, 600, "tawy");  // The windows creates context. It must come first!
-  model *m    = new(Model, "face.obj", "container.jpg");
+  model *m    = new(Model, "cube.obj", "container.jpg");
   program *p  = new(Program, "vertex_shader.glsl", "fragment_shader.glsl");
 
   if (!p)
@@ -31,7 +32,10 @@ int main(void)
   while (!should_close(win))
   {
     refresh(win);
-    enable(p, m, win, NULL);
+    enable(p, NULL);
+
+    set(p, "texture1", &(m->texture->location), UNIFORM_INT);
+    enable(m, win, NULL);
 
     //set(p, "ourColor", &x, UNIFORM_VEC4);
   }

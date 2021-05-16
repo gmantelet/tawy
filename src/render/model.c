@@ -13,6 +13,11 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include <assimp/cimport.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #include "model.h"
 
 
@@ -29,7 +34,7 @@
 *    true : The file could be open.
 *    false: The file does not exist.
 *******************************************************************************/
-static bool scan_obj_file(const char *path, unsigned int *vcount, unsigned int *tcount, unsigned int *icount, unsigned int *ncount)
+/*static bool scan_obj_file(const char *path, unsigned int *vcount, unsigned int *tcount, unsigned int *icount, unsigned int *ncount)
 {
   FILE         *f;
   char         *line = NULL;
@@ -53,7 +58,7 @@ static bool scan_obj_file(const char *path, unsigned int *vcount, unsigned int *
   fclose(f);
   if (line) free(line);
   return true; 
-}
+}*/
 
 
 /*******************************************************************************
@@ -88,7 +93,7 @@ static bool scan_obj_file(const char *path, unsigned int *vcount, unsigned int *
 *    true : The arrays could be populated.
 *    false: The file does not exist or contain unrecoverable errors.
 *******************************************************************************/
-static bool fill_vertices(const char *path, float *v, unsigned int *i, unsigned int vlen, unsigned int tlen)
+/*static bool fill_vertices(const char *path, float *v, unsigned int *i, unsigned int vlen, unsigned int tlen)
 {
   FILE         *f;
   int           r;
@@ -242,6 +247,144 @@ static bool load_model(model *obj, const char *filename, float **vertices, unsig
   obj->vertices = vcount;
   obj->elements = icount * 3;
   return true;
+}*/
+
+static bool elements_to_buffer(model *obj, const struct aiScene *scene)
+{
+  const struct aiMesh *mesh;
+  const struct aiFace *face;
+  unsigned int         faceIndex = 0;
+
+  for (unsigned int n = 0; n < scene->mNumMeshes; n++)
+  {
+    mesh = scene->mMeshes[n];
+    obj->indices = malloc(mesh->mNumFaces * 3 * sizeof(unsigned int));
+    faceIndex = 0;
+
+    for (unsigned int t = 0; t < mesh->mNumFaces; t++)
+    {
+      face = &mesh->mFaces[t];
+      memcpy(&obj->indices[faceIndex], face->mIndices, 3 * sizeof(unsigned int));
+      faceIndex += 3;
+    }
+
+    obj->elements = scene->mMeshes[n]->mNumFaces;
+  }
+
+  glGenBuffers(1, &obj->ebo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj->elements * sizeof(int), obj->indices, GL_STATIC_DRAW);
+  return true;
+}
+
+
+static bool normals_to_buffer(model *obj, const struct aiScene *scene)
+{
+  const struct aiMesh *mesh;
+  unsigned int buffer;
+
+  for (unsigned int n = 0; n < scene->mNumMeshes; n++)
+  {
+    mesh = scene->mMeshes[n];
+
+    if (mesh->mNormals)
+    {     
+      glGenBuffers(1, &buffer);
+      glBindBuffer(GL_ARRAY_BUFFER, buffer);
+      glBufferData(GL_ARRAY_BUFFER, mesh->mNumVertices * 3 * sizeof(float), mesh->mNormals, GL_STATIC_DRAW);
+
+      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+      glEnableVertexAttribArray(1);
+    }
+  }
+  return true;
+}
+
+static bool textures_to_buffer(model *obj, const struct aiScene *scene)
+{
+  const struct aiMesh *mesh;
+  float               *texCoords;
+  unsigned int         buffer;
+
+  for (unsigned int n = 0; n < scene->mNumMeshes; n++)
+  {
+    mesh = scene->mMeshes[n];
+
+    if (mesh->mTextureCoords[0])
+    { 
+      texCoords = (float *)malloc(mesh->mNumVertices * 2 * sizeof(float));
+      for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+      {
+        texCoords[i * 2]     = mesh->mTextureCoords[0][i].x;
+        texCoords[i * 2 + 1] = mesh->mTextureCoords[0][i].y;
+      }
+
+      glGenBuffers(1, &buffer);
+      glBindBuffer(GL_ARRAY_BUFFER, buffer);
+      glBufferData(GL_ARRAY_BUFFER, mesh->mNumVertices * 2 * sizeof(float), texCoords, GL_STATIC_DRAW);
+
+      glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+      glEnableVertexAttribArray(2);
+    }
+  }
+  return true;
+}
+
+static bool vertices_to_buffer(model *obj, const struct aiScene *scene)
+{
+  const struct aiMesh *mesh;
+
+  for (unsigned int n = 0; n < scene->mNumMeshes; n++)
+  {
+    mesh = scene->mMeshes[n];
+
+    if (mesh->mVertices)
+    {
+      obj->vertices = mesh->mNumVertices;
+      obj->coordinates = malloc(obj->vertices * 3 * sizeof(float));
+      memcpy(obj->coordinates, mesh->mVertices, obj->vertices * 3 * sizeof(float));
+
+      glGenBuffers(1, &obj->vbo);
+      glBindBuffer(GL_ARRAY_BUFFER, obj->vbo);
+      glBufferData(GL_ARRAY_BUFFER, obj->vertices * 3 * sizeof(float), obj->coordinates, GL_STATIC_DRAW);
+
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+      glEnableVertexAttribArray(0);
+    }
+  }
+  return true;
+}
+
+
+static bool load_model(model *obj, const char *filename)
+{ 
+  bool         ret        = true;
+  char         path[1024] = "res/models/";
+  strcat(path, filename);
+
+  const struct aiScene *scene = aiImportFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+  if (!scene) 
+  {
+    printf("Assimp error: %s\n", aiGetErrorString());
+    return false;
+  }
+  
+  if (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+  {
+    printf("Assimp error: %s\n", aiGetErrorString());
+    ret = false;
+  }
+
+  else
+  {
+    vertices_to_buffer(obj, scene);
+    normals_to_buffer(obj, scene);
+    textures_to_buffer(obj, scene);
+    elements_to_buffer(obj, scene);
+  }
+
+  aiReleaseImport(scene);
+  return ret;
 }
 
 
@@ -259,51 +402,29 @@ static bool load_model(model *obj, const char *filename, float **vertices, unsig
 static bool Model__init__(void *self, va_list *args)
 {
   model *obj = self;
-  float *vertices = NULL;
-  unsigned int *indices = NULL;
-  
-  //
-  // 1. Retrieve .obj file. Build vertices and indices from it. Vertex array and
-  //    index array will be sent to VBO and EBO respectively.
-  //
-  if (!load_model(obj, va_arg(*args, char *), &vertices, &indices))
-    return false;
+  //float *vertices = NULL;
+  //unsigned int *indices = NULL;
 
   //
-  // 2. Create arrays and buffers: VAO, VBO and EBO
+  // 1. Create arrays and buffers: VAO, VBO and EBO
   //
   glGenVertexArrays(1, &obj->vao);
   glBindVertexArray(obj->vao);
-
-  glGenBuffers(1, &obj->vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, obj->vbo);
-  glBufferData(GL_ARRAY_BUFFER, obj->vertices * 8 * sizeof(float), vertices, GL_STATIC_DRAW);
-
-  glGenBuffers(1, &obj->ebo);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ebo);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj->elements * sizeof(int), indices, GL_STATIC_DRAW);
-
+  
   //
-  // 3. From vertex array, light corresponding attribute in VAO.
+  // 2. Retrieve .obj file. Build vertices and indices from it. Vertex array and
+  //    index array will be sent to VBO and EBO respectively.
   //
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
-  glEnableVertexAttribArray(0);
-
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
-  glEnableVertexAttribArray(2);
-
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindVertexArray(0);
+  //if (!load_model(obj, va_arg(*args, char *), &vertices, &indices))
+  if (!load_model(obj, va_arg(*args, char *)))
+    return false;
 
   //
   // 4. Load texture from file.
   //
   obj->texture = new(Texture, va_arg(*args, char *));
-  free(vertices);
-  free(indices);
+  //free(vertices);
+  //free(indices);
   return true;
 }
 
@@ -323,6 +444,7 @@ static bool Model__enable__(void *self)
   if (obj->texture)
   {
     glActiveTexture(GL_TEXTURE0);
+    obj->texture->location = GL_TEXTURE0;
     glBindTexture(GL_TEXTURE_2D, obj->texture->id);
   }  
 

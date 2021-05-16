@@ -31,6 +31,10 @@ typedef struct model
   unsigned int vertices;
   unsigned int elements;
 
+  float        *coordinates;
+  unsigned int *indices;  // Temporary. But could be useful if I want to reshape later.
+
+
   texture      *texture;
 }model;
 

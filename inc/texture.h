@@ -23,6 +23,7 @@ typedef struct texture
   const void *__cls__;
 
   unsigned int id;
+  unsigned int location;
   int          width;
   int          height;
   int          number_channels;
