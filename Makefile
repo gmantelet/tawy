@@ -21,13 +21,11 @@ OBJECTS  = $(SOURCES:$(SRC)/%.c=$(OBJ)/%.o)
 all: $(OBJECTS) $(BIN)/$(TARGET)
 
 $(OBJECTS): $(OBJ)/%.o : $(SRC)/%.c
-	@echo $(MKDIR) $(@D)
 	@$(MKDIR) $(@D)
 	@echo $(CC) $(CFLAGS) -c $< -o $@
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(BIN)/$(TARGET): $(OBJECTS)
-	@echo $(MKDIR) $(@D)
 	@$(MKDIR) $(@D)
 	@echo $(CC) $(OBJECTS) $(LFLAGS) -o $@
 	@$(CC) $(OBJECTS) $(LFLAGS) -o $@
