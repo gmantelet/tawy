@@ -125,8 +125,9 @@ static bool Window__init__(void *self, va_list *args)
   glfwSetFramebufferSizeCallback(obj->display, framebuffer_size_callback);
   glfwSetKeyCallback(obj->display, key_callback);
 
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  glEnable(GL_DEPTH_TEST);
   return true;
 }
 
@@ -209,7 +210,7 @@ static bool Window__should_close__(void *self)
 static bool Window__prepare__(void *self)
 {
   glClearColor(1.0f, 0.95f, 0.75f, 1.0f);  // Trying to mimic bright desert.
-  glClear(GL_COLOR_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   return true;
 }
 
@@ -244,7 +245,7 @@ static const class _Window = {
   .__get__          = Window__get__,
   .__set__          = NULL,
   .__should_close__ = Window__should_close__,
-  .__refresh__      = Window__prepare__,
+  .__prepare__      = Window__prepare__,
   .__enable__       = Window__enable__
 };
 

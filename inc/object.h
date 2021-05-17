@@ -20,7 +20,7 @@
 *    3. __del__         : Class destructor
 *    4. __getattr__     : Encapsulator if class definition is private
 *    5. __should_close__: Hint to determine if instance is ready for collection.
-*    6. __refresh__     : Update status of this instance, refresh on screen.
+*    6. __prepare__     : Update status of this instance, refresh on screen.
 *    7. __input__       : Forces instance to process external inputs (e.g. from
 *                         user).
 *    8. __enable__      : Make this instance active. Make OpenGL use its buffer
@@ -34,7 +34,7 @@ typedef struct class
   bool  (*__get__)(void *, const char *, void **);
   bool  (*__set__)(void *, const char *, void *, va_list *);
   bool  (*__should_close__)(void *);
-  bool  (*__refresh__)(void *);
+  bool  (*__prepare__)(void *);
   bool  (*__enable__)(void *);
 }class;
 
@@ -111,7 +111,7 @@ bool should_close(void *);
 
 
 /*******************************************************************************
-* Function  : refresh
+* Function  : prepare
 * Brief     : Update status of this instance.
 * Parameters:
 *    1. self    : The instance of the class.
@@ -120,7 +120,7 @@ bool should_close(void *);
 *    false: One of the operation required by the instance to update, or refresh
 *           itself on screen failed.
 *******************************************************************************/
-bool refresh(void *);
+bool prepare(void *);
 
 
 /*******************************************************************************

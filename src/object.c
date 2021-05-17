@@ -175,7 +175,7 @@ bool should_close(void *self)
 
 
 /*******************************************************************************
-* Function  : refresh
+* Function  : prepare
 * Brief     : Update status of this instance.
 * Parameters:
 *    1. self    : The instance of the class.
@@ -184,11 +184,11 @@ bool should_close(void *self)
 *    false: One of the operation required by the instance to update, or refresh
 *           itself on screen failed.
 *******************************************************************************/
-bool refresh(void *self)
+bool prepare(void *self)
 {
   const class **obj = self;
-  if (self && *obj && (*obj)->__refresh__)
-    return (*obj)->__refresh__(self);
+  if (self && *obj && (*obj)->__prepare__)
+    return (*obj)->__prepare__(self);
   return false; 
 }
 

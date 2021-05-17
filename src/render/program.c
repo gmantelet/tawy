@@ -289,7 +289,7 @@ static const class _Program = {
   .__get__          = Program__get__,
   .__set__          = Program__set__,
   .__should_close__ = NULL,
-  .__refresh__      = NULL,
+  .__prepare__      = NULL,
   .__enable__       = Program__enable__
 };
 

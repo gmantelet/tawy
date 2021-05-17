@@ -35,6 +35,7 @@ static bool Texture__init__(void *self, va_list *args)
   texture       *obj        = self;
   unsigned char *data;
   char           path[1024] = "res/textures/";
+  unsigned int   texture_type;
 
   glGenTextures(1, &obj->id);
   glBindTexture(GL_TEXTURE_2D, obj->id);
@@ -45,10 +46,14 @@ static bool Texture__init__(void *self, va_list *args)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   strcat(path, va_arg(*args, char *));
+
+  char *dot = strrchr(path, '.');
+  texture_type = (dot && !strcmp(dot, ".png"))? GL_RGBA : GL_RGB;
+
   stbi_set_flip_vertically_on_load(true);
   if (NULL != (data = stbi_load(path, &obj->width, &obj->height, &obj->number_channels, 0)))
   {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, obj->width, obj->height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, obj->width, obj->height, 0, texture_type, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
     stbi_image_free(data);
     return true;
@@ -70,7 +75,7 @@ static const class _Texture = {
   .__get__          = NULL,
   .__set__          = NULL,
   .__should_close__ = NULL,
-  .__refresh__      = NULL,
+  .__prepare__      = NULL,
   .__enable__       = NULL,
 };
 

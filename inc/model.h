@@ -35,7 +35,8 @@ typedef struct model
   unsigned int *indices;  // Temporary. But could be useful if I want to reshape later.
 
 
-  texture      *texture;
+  texture      *texture[16]; // Allowing max 16 textures per model.
+  unsigned int  texture_cnt;
 }model;
 
 
@@ -44,5 +45,7 @@ typedef struct model
 * Brief     : Defines a class that will handle our basic functions.
 *******************************************************************************/
 extern const void *Model;
+
+extern const void *AssimpModel;
 
 #endif

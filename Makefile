@@ -13,7 +13,7 @@ MKDIR    = mkdir -p
 CFLAGS   = -c -Wall -Werror -O3 -I./$(INC)
 LFLAGS   = -lm -lglfw -lGL -lX11 -lpthread -lXi -lXrandr -ldl -lassimp
 
-SOURCES  = $(wildcard $(SRC)/*.c) $(wildcard $(SRC)/*/*.c)
+SOURCES  = $(wildcard $(SRC)/*.c) $(wildcard $(SRC)/*/*.c) $(wildcard $(SRC)/*/*/*.c)
 INCLUDES = $(wildcard $(INC)/*.h)
 OBJECTS  = $(SOURCES:$(SRC)/%.c=$(OBJ)/%.o)
 
